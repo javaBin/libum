@@ -27,7 +27,7 @@ type Session = {
     speakers: Speaker[];
 };
 
-type Submissions = {
+type Submissions_index = {
     sessions: Session[]
 }
 
@@ -39,7 +39,7 @@ export async function loader() {
         }
     })
 
-    const submissions = await response.json() as Submissions
+    const submissions = await response.json() as Submissions_index
 
     return Response.json(submissions.sessions)
 }
