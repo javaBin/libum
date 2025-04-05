@@ -54,12 +54,14 @@ export default function Index() {
             <ul>
                 {
                     sessions.map(session => <li key={session.id}><Session title={session.title}
-                                                                                      speakers={session.speakers.map(s => s.name)}
-                                                                                      category={"FAEN"}/></li>)
+                                                                          speakers={session.speakers.map(s => s.name)}
+                                                                          category={"FAEN"}
+                                                                          id={session.sessionId}
+                    /></li>)
                 }
             </ul>
         </>
-        )
+    )
 }
 
 function SessionHeader() {
@@ -78,14 +80,16 @@ function SessionHeader() {
  * Trakk seg
  * */
 
-function Session({title, speakers, category}: { title: string, speakers: string[], category: string }) {
+function Session({title, speakers, category, id}: { title: string, speakers: string[], category: string, id: string }) {
     return <div style={{
         margin: "1rem",
         background: "pink",
         color: "chocolate"
     }}>
-        <h2 style={{fontWeight: "bold"}}>{title} ({speakers.join(", ")})</h2>
-        <p>{category}</p>
-        <p>Stage: Initial</p>
+        <a href={`/submissions/${id}`}>
+            <h2 style={{fontWeight: "bold"}}>{title} ({speakers.join(", ")})</h2>
+            <p>{category}</p>
+            <p>Stage: Initial</p>
+        </a>
     </div>
 }
