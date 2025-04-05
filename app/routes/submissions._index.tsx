@@ -1,4 +1,5 @@
 import {useLoaderData} from "react-router";
+import {Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow} from "~/components/ui/table";
 
 type Speaker = {
     name: string;
@@ -51,15 +52,27 @@ export default function Index() {
     return (
         <>
             <SessionHeader />
-            <ul>
-                {
-                    sessions.map(session => <li key={session.id}><Session title={session.title}
-                                                                          speakers={session.speakers.map(s => s.name)}
-                                                                          category={"FAEN"}
-                                                                          id={session.sessionId}
-                    /></li>)
-                }
-            </ul>
+            <Table>
+                <TableCaption>A list of your recent invoices.</TableCaption>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[100px]">Tittel</TableHead>
+                        <TableHead>Folk</TableHead>
+                        <TableHead>status</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {sessions.map((session) => (
+                        <Session key={session.sessionId} session={session} />
+                    ))}
+                </TableBody>
+                <TableFooter>
+                    <TableRow>
+                        <TableCell colSpan={3}>Total</TableCell>
+                        <TableCell className="text-right">$2,500.00</TableCell>
+                    </TableRow>
+                </TableFooter>
+            </Table>
         </>
     )
 }
@@ -80,16 +93,18 @@ function SessionHeader() {
  * Trakk seg
  * */
 
-function Session({title, speakers, category, id}: { title: string, speakers: string[], category: string, id: string }) {
-    return <div style={{
-        margin: "1rem",
-        background: "pink",
-        color: "chocolate"
-    }}>
-        <a href={`/submissions/${id}`}>
-            <h2 style={{fontWeight: "bold"}}>{title} ({speakers.join(", ")})</h2>
-            <p>{category}</p>
-            <p>Stage: Initial</p>
-        </a>
-    </div>
+function Session({session}: {session: Session}) {
+
+    return (
+        <TableRow
+            key={session.sessionId}
+            onClick={() => window.location.href = `/submissions/${session.sessionId}`}
+            style={{ cursor: 'pointer' }} // Optional: to indicate it's clickable
+        >
+            <TableCell className="font-medium">{session.title}</TableCell>
+            <TableCell>{session.speakers.map(speaker => speaker.name).join(", ")}</TableCell>
+            <TableCell>{"innsendt"}</TableCell>
+        </TableRow>
+    );
+
 }
