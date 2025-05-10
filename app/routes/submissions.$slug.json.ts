@@ -1,0 +1,1 @@
+export { loader } from './submissions.$slug'; 
