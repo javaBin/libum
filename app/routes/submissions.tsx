@@ -3,6 +3,7 @@ import { Outlet, useLoaderData, useOutletContext } from '@remix-run/react';
 import type { LoaderFunction } from '@remix-run/node';
 import { json } from '@remix-run/node';
 import { getConferences, getSessions } from '~/api/sessions.server';
+import { getCachedConferences, getCachedSessions } from '~/utils/sessionsCache.server';
 import { mapSessionData } from '~/utils/sessions';
 import { setRawSessions } from '../utils/rawSessionCache.client';
 import type { TalkDetail } from '~/types/talk';
@@ -54,19 +55,37 @@ export const loader: LoaderFunction = async ({ request }) => {
   let error: string | undefined = undefined;
 
   try {
-    console.log('Fetching conferences...');
-    const rawConfs = await getConferences();
-    availableConferences = rawConfs.sort((a, b) => b.year.localeCompare(a.year));
+    console.log('Getting conferences from cache...');
+    // Try to get from cache first
+    try {
+      const cachedConferences = await getCachedConferences();
+      availableConferences = cachedConferences.sort((a, b) => b.year.localeCompare(a.year));
+      console.log(`Retrieved ${availableConferences.length} conferences from cache`);
+    } catch (cacheError) {
+      console.error('Error getting from cache, falling back to API:', cacheError);
+      const rawConfs = await getConferences();
+      availableConferences = rawConfs.sort((a, b) => b.year.localeCompare(a.year));
+    }
+
     selectedYear = yearParam || availableConferences[0]?.year || '';
     isFutureYear = parseInt(selectedYear, 10) > new Date().getFullYear();
     
     const sel = availableConferences.find(c => c.year === selectedYear);
     
     if (sel) {
-      console.log(`Fetching sessions for ${sel.name} (${sel.id})...`);
+      console.log(`Getting sessions for ${sel.name} (${sel.id})...`);
       try {
-        const fetchedRawSessions = await getSessions(sel.id);
-        rawSessions = fetchedRawSessions;
+        // Try to get from cache first
+        try {
+          const cachedSessions = await getCachedSessions(sel.id);
+          rawSessions = cachedSessions;
+          console.log(`Retrieved ${rawSessions.length} sessions from cache for ${sel.name}`);
+        } catch (cacheError) {
+          console.error('Error getting sessions from cache, falling back to API:', cacheError);
+          const fetchedRawSessions = await getSessions(sel.id);
+          rawSessions = fetchedRawSessions;
+        }
+        
         sessions = mapSessionData(rawSessions, selectedYear);
         console.log(`Successfully loaded ${sessions.length} sessions for ${sel.name}`);
       } catch (sessionError: any) {

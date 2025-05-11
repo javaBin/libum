@@ -6,6 +6,7 @@ import { getConferences, Conference } from '~/api/sessions.server';
  */
 export const loader: LoaderFunction = async () => {
   try {
+    // This will now use the cached conferences first
     const conferences: Conference[] = await getConferences();
     return json({ conferences, source: 'authenticated' });
   } catch (error) {

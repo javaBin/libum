@@ -5,6 +5,7 @@ import type { TalkDetail } from "~/types/talk";
 import { useEffect } from "react";
 import { useSubmissionsContext } from "./submissions";
 import { getConferences, getSessions } from '~/api/sessions.server';
+import { getCachedSession, getCachedConferences, getCachedSessions } from '~/utils/sessionsCache.server';
 
 // Internal API types
 interface SocialMediaData {
@@ -141,6 +142,62 @@ export const loader: LoaderFunction = async ({ params, request }) => {
     }
     const url = new URL(request.url);
     const year = url.searchParams.get("year") || "2023";
+    
+    try {
+        // First get the main session from the global cache
+        const cachedSession = await getCachedSession(slug);
+        
+        if (cachedSession) {
+            console.log(`Using cached session data for ${slug}`);
+            
+            // Get cached conferences
+            const conferences = await getCachedConferences();
+            
+            // Use cache to get related sessions efficiently
+            const allSessionsByYear: Record<string, any[]> = {};
+            for (const conf of conferences) {
+                try {
+                    // Use the cache for all sessions
+                    const rawSessions = await getCachedSessions(conf.id);
+                    // Attach year to each session
+                    allSessionsByYear[conf.year] = rawSessions.map(rs => ({ ...rs, year: conf.year }));
+                } catch (error) {
+                    console.error(`Error getting cached sessions for ${conf.year}, skipping:`, error);
+                    allSessionsByYear[conf.year] = [];
+                }
+            }
+            
+            // Group other talks by speaker email
+            const otherTalksBySpeaker: Record<string, { currentYear: any[]; other: any[] }> = {};
+            for (const sp of cachedSession.speakers) {
+                const email = sp.email;
+                const currentList = allSessionsByYear[year] || [];
+                const currentYearSessions = currentList.filter((rs: any) => rs.speakers.some((s2: any) => s2.email === email) && rs.id !== cachedSession.id);
+                const other: any[] = [];
+                for (const y of Object.keys(allSessionsByYear)) {
+                    if (y === year) continue;
+                    other.push(...allSessionsByYear[y].filter((rs: any) => rs.speakers.some((s2: any) => s2.email === email)));
+                }
+                otherTalksBySpeaker[email] = { currentYear: currentYearSessions, other };
+            }
+            
+            return json(
+                { 
+                    session: cachedSession, 
+                    isAuthenticated: true, 
+                    authError: null, 
+                    year, 
+                    otherTalksBySpeaker 
+                },
+                { headers: { 'Cache-Control': 'public, max-age=86400' } }
+            );
+        }
+    } catch (error) {
+        console.error('Error fetching from cache:', error);
+        // Will fall back to API fetch
+    }
+    
+    // Fall back to direct API call if cache fails
     const credentials = process.env.MORESLEEP_BASIC_AUTH;
     if (!credentials) {
         // Not throwing here, to allow clientLoader to potentially serve public data

@@ -11,8 +11,15 @@ import { createReadableStreamFromReadable } from "@remix-run/node";
 import { RemixServer } from "@remix-run/react";
 import { isbot } from "isbot";
 import { renderToPipeableStream } from "react-dom/server";
+import { initializeCache } from "~/utils/sessionsCache.server";
 
 const ABORT_DELAY = 5_000;
+
+// Initialize the global sessions cache at server startup
+console.log("Starting server-side sessions cache initialization...");
+initializeCache()
+  .then(() => console.log("Global sessions cache initialized successfully"))
+  .catch(err => console.error("Failed to initialize global sessions cache:", err));
 
 export default function handleRequest(
   request: Request,

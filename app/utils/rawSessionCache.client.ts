@@ -8,6 +8,10 @@ interface RawCache {
 
 let rawSessionsCache: RawCache = {};
 
+/**
+ * Store sessions in the client-side cache, organized by year.
+ * This is populated from data that comes from the server-side cache.
+ */
 export function setRawSessions(year: string, sessions: TalkDetail[]): void {
   if (!rawSessionsCache[year]) {
     rawSessionsCache[year] = {};
@@ -22,6 +26,10 @@ export function setRawSessions(year: string, sessions: TalkDetail[]): void {
   console.log(`[RawSessionCache] Cached ${sessions.length} raw detailed sessions for ${year}.`);
 }
 
+/**
+ * Get a session from the client-side cache by year and ID.
+ * This avoids unnecessary server requests for data we already have.
+ */
 export function getRawSession(year: string, id: string): TalkDetail | undefined {
   const session = rawSessionsCache[year]?.[id];
   if (session) {
@@ -32,6 +40,9 @@ export function getRawSession(year: string, id: string): TalkDetail | undefined 
   return session;
 }
 
+/**
+ * Clear the client-side cache
+ */
 export function clearRawCache(): void {
   rawSessionsCache = {};
   console.log('[RawSessionCache] Raw sessions cache cleared.');
